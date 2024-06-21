@@ -1,9 +1,8 @@
 package de.claudioaltamura.spring.boot.resilience4j;
 
-import com.github.tomakehurst.wiremock.http.RequestMethod;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.github.tomakehurst.wiremock.junit5.WireMockExtension;
 import com.github.tomakehurst.wiremock.junit5.WireMockTest;
-import com.github.tomakehurst.wiremock.stubbing.StubMapping;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
@@ -13,8 +12,6 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.web.client.RestClient;
-
-import java.util.List;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.*;
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig;
@@ -42,13 +39,6 @@ class ApplicationControllerIntegrationTest {
         wireMockServer.resetAll();
     }
 
-    private static boolean isStubActiveForUrl(List<StubMapping> stubMappings, String url, RequestMethod method) {
-        return stubMappings.stream().anyMatch(mapping ->
-                mapping.getRequest().getUrlMatcher().match(url).isExactMatch() &&
-                        mapping.getRequest().getMethod() == method
-        );
-    }
-
     @Test
     void test() {
         wireMockServer.stubFor(
@@ -59,10 +49,6 @@ class ApplicationControllerIntegrationTest {
                         )
         );
 
-        List<StubMapping> allStubMappings = wireMockServer.listAllStubMappings().getMappings();
-        String urlToCheck = "/api/people/2";
-        assertThat(isStubActiveForUrl(allStubMappings, urlToCheck, RequestMethod.GET)).isTrue();
-
         var restClient = RestClient.builder()
                 .baseUrl("http://localhost:" + port)
                 .defaultHeaders(header->{ header.add("Accept", MediaType.APPLICATION_JSON_VALUE);})
@@ -71,9 +57,9 @@ class ApplicationControllerIntegrationTest {
         var people = restClient.get()
                 .uri("/people/{id}", 2)
                 .retrieve()
-                .body(People.class);
+                .body(JsonNode.class);
 
-        assertThat(people.getName()).isEqualTo("C-3PO");
+        assertThat(people.findValue("name").asText("empty")).isEqualTo("C-3PO");
 
         wireMockServer.verify(getRequestedFor(urlPathMatching("/api/people/.*")));
     }

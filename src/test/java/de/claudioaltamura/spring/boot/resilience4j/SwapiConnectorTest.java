@@ -23,7 +23,7 @@ class SwapiConnectorTest {
     void shouldReturnPeople() {
         var people = swapiConnector.getPeople(2);
 
-        assertThat(people.getName()).isEqualTo("C-3PO");
+        assertThat(people.findValue("name").asText("empty")).isEqualTo("C-3PO");
     }
 
 }

@@ -1,5 +1,6 @@
 package de.claudioaltamura.spring.boot.resilience4j;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
@@ -15,15 +16,15 @@ public class SwapiConnector {
         this.restClient = restClient;
     }
 
-    public People getPeople(int id) {
+    public JsonNode getPeople(int id) {
         return restClient.get()
                 .uri("/api/people/{id}/?format=json", id)
                 .accept(MediaType.APPLICATION_JSON)
                 .retrieve()
-                .body(People.class);
+                .body(JsonNode.class);
     }
 
-    public People getPeopleWithDelay(int id) {
+    public JsonNode getPeopleWithDelay(int id) {
         try {
             Thread.sleep(5000);
         } catch (InterruptedException e) {
