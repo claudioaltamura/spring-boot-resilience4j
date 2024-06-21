@@ -1,4 +1,4 @@
-![GitHub Workflow Status (with branch)](https://img.shields.io/github/actions/workflow/status/claudioaltamura/spring-boot-resilience4j/maven-build.yaml?branch=main)
+[![Java CI with Maven](https://github.com/claudioaltamura/spring-boot-resilience4j/actions/workflows/maven-build.yaml/badge.svg)](https://github.com/claudioaltamura/spring-boot-resilience4j/actions/workflows/maven-build.yaml)
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
