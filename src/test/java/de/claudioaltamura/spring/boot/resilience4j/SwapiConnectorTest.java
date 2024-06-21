@@ -12,15 +12,18 @@ class SwapiConnectorTest {
 
     @BeforeEach
     public void setUp() {
-        swapiConnector = new SwapiConnector(new SwapiConfiguration().restClient());
+        swapiConnector = new SwapiConnector(
+                new SwapiConnectorConfiguration("https://swapi.dev")
+                        .restClient()
+        );
     }
 
     @Test
     @DisplayName("get people")
     void shouldReturnPeople() {
-        var people = swapiConnector.people(2);
+        var people = swapiConnector.getPeople(2);
 
-        assertThat(people.findValue("name").asText("empty")).isEqualTo("C-3PO");
+        assertThat(people.getName()).isEqualTo("C-3PO");
     }
 
 }
