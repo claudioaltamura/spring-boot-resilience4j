@@ -51,7 +51,6 @@ class ApplicationControllerIntegrationTest {
 
         var restClient = RestClient.builder()
                 .baseUrl("http://localhost:" + port)
-                .defaultHeaders(header->{ header.add("Accept", MediaType.APPLICATION_JSON_VALUE);})
                 .build();
 
         var people = restClient.get()
