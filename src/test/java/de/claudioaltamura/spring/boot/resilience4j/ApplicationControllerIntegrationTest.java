@@ -59,9 +59,10 @@ class ApplicationControllerIntegrationTest {
                 .retrieve()
                 .body(JsonNode.class);
 
+        assertThat(people).isNotNull();
         assertThat(people.findValue("name").asText("empty")).isEqualTo("C-3PO");
 
-        wireMockServer.verify(getRequestedFor(urlPathMatching("/api/people/.*")));
+        wireMockServer.verify(1, getRequestedFor(urlPathMatching("/api/people/.*")));
     }
 
 }
