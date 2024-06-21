@@ -1,5 +1,6 @@
 package de.claudioaltamura.spring.boot.resilience4j;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -11,6 +12,7 @@ public class SwapiConnectorConfiguration {
     @Value("${swapiConnector.baseURL}")
     private String baseURL;
 
+    @Autowired
     public SwapiConnectorConfiguration() {}
 
     public SwapiConnectorConfiguration(String baseURL) {
