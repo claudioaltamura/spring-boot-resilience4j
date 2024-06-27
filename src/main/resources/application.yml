@@ -1,0 +1,34 @@
+management:
+    endpoint:
+        health:
+            show-details: always
+    endpoints:
+        web:
+            exposure:
+                include: '*'
+    health:
+        circuitbreakers:
+            enabled: true
+        ratelimiters:
+            enabled: true
+resilience4j:
+    circuitbreaker:
+        configs:
+            default:
+                automaticTransitionFromOpenToHalfOpenEnabled: true
+                eventConsumerBufferSize: 10
+                failureRateThreshold: 50
+                minimumNumberOfCalls: 5
+                permittedNumberOfCallsInHalfOpenState: 3
+                registerHealthIndicator: true
+                slidingWindowSize: 10
+                waitDurationInOpenState: 5s
+        instances:
+            peopleEndpointCircuitBreaker:
+                baseConfig: default
+                registerHealthIndicator: true
+spring:
+    application:
+        name: spring.boot.resilience4j
+swapiConnector:
+    baseURL: https://swapi.dev
