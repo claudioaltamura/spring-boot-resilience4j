@@ -47,6 +47,11 @@ public abstract class AbstractResilience4JIntegrationTest {
                 .build();
     }
 
+    protected void transitionToOpenState(String circuitBreakerName) {
+        CircuitBreaker circuitBreaker = circuitBreakerRegistry.circuitBreaker(circuitBreakerName);
+        circuitBreaker.transitionToOpenState();
+    }
+
     protected void assertCircuitBreakerState(String circuitBreakerName, CircuitBreaker.State state) {
         CircuitBreaker circuitBreaker = circuitBreakerRegistry.circuitBreaker(circuitBreakerName);
         assertThat(circuitBreaker.getState()).isEqualTo(state);

@@ -11,7 +11,6 @@ import org.springframework.http.HttpStatusCode;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 
-import java.util.concurrent.TimeUnit;
 import java.util.stream.IntStream;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.*;
@@ -24,13 +23,7 @@ class ApplicationControllerIntegrationTest extends AbstractResilience4JIntegrati
     @Test
     @DisplayName("return succesfully People")
     void shouldReturnSuccesfullyPeople() {
-        wireMockServer.stubFor(
-                get(urlPathMatching("/api/people/.*"))
-                        .willReturn(aResponse()
-                                .withHeader("Content-Type", MediaType.APPLICATION_JSON_VALUE)
-                                .withBodyFile("swapi/response-200.json")
-                        )
-        );
+        stubSuccessfulRequestUrlPathMatching("/api/people/.*", "swapi/response-200.json");
 
         var restClient = getRestClient();
         var people = restClient.get()
@@ -44,50 +37,66 @@ class ApplicationControllerIntegrationTest extends AbstractResilience4JIntegrati
         wireMockServer.verify(1, getRequestedFor(urlPathMatching("/api/people/.*")));
     }
 
+    private void stubSuccessfulRequestUrlPathMatching(String urlPathMatching, String file) {
+        wireMockServer.stubFor(
+                get(urlPathMatching(urlPathMatching))
+                        .willReturn(aResponse()
+                                .withHeader("Content-Type", MediaType.APPLICATION_JSON_VALUE)
+                                .withBodyFile(file)
+                        )
+        );
+    }
+
     @Test
-    @DisplayName("set circuit breaker in open state and back")
-    void shouldSetCircuitBreakerInOpenStateAndBack() {
+    @DisplayName("should open circuit breaker")
+    void shouldOpenCircuitBreaker() {
         //Given
         wireMockServer.stubFor(
                 get(urlPathMatching("/api/people/.*"))
                         .willReturn(serverError())
         );
         var restClient = getRestClient();
+
         //When first calls failed
         IntStream.rangeClosed(1, 5)
                 .forEach(i -> {
                     ResponseEntity<JsonNode> response = restClient.get()
                             .uri("/people/{id}", 2)
                             .retrieve()
-                             .onStatus(HttpStatusCode::is5xxServerError, (req, resp) -> {
-                                logger.error("{} {}", resp.getStatusText(), resp.getStatusCode());
-                             })
+                            .onStatus(HttpStatusCode::is5xxServerError, (req, resp) ->
+                                logger.error("{} {}", resp.getStatusText(), resp.getStatusCode())
+                            )
                             .toEntity(JsonNode.class);
                     assertThat(response.getStatusCode()).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR);
                 });
 
-        wireMockServer.resetRequests();
-        wireMockServer.getStubMappings().getFirst().setResponse(aResponse()
-                .withHeader("Content-Type", MediaType.APPLICATION_JSON_VALUE)
-                .withBodyFile("swapi/response-200.json").build());
-        try {
-            TimeUnit.SECONDS.sleep(5);
-        } catch (InterruptedException ie) {
-            Thread.currentThread().interrupt();
-        }
+        //Then
+        assertCircuitBreakerState(SwapiConnector.PEOPLE_ENDPOINT_CIRCUIT_BREAKER, CircuitBreaker.State.OPEN);
+    }
 
-        IntStream.rangeClosed(1, 10)
+    @Test
+    @DisplayName("should close circuit breaker")
+    void shouldCloseCircuitBreaker() {
+        //Given
+        transitionToOpenState(SwapiConnector.PEOPLE_ENDPOINT_CIRCUIT_BREAKER);
+        circuitBreakerRegistry.circuitBreaker(SwapiConnector.PEOPLE_ENDPOINT_CIRCUIT_BREAKER).transitionToHalfOpenState();
+        stubSuccessfulRequestUrlPathMatching("/api/people/.*", "swapi/response-200.json");
+
+        //When
+        var restClient = getRestClient();
+        IntStream.rangeClosed(1, 3)
                 .forEach(i -> {
                     ResponseEntity<JsonNode> response = restClient.get()
                             .uri("/people/{id}", 2)
                             .retrieve()
-                            .onStatus(HttpStatusCode::is5xxServerError, (req, resp) -> {
-                                logger.error("{} {}", resp.getStatusText(), resp.getStatusCode());
-                            })
+                            .onStatus(HttpStatusCode::is5xxServerError, (req, resp) ->
+                                logger.error("{} {}", resp.getStatusText(), resp.getStatusCode())
+                            )
                             .toEntity(JsonNode.class);
                     assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
                 });
+
+        //Then
         assertCircuitBreakerState(SwapiConnector.PEOPLE_ENDPOINT_CIRCUIT_BREAKER, CircuitBreaker.State.CLOSED);
     }
-
 }
