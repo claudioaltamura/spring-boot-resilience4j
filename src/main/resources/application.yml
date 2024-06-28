@@ -9,24 +9,23 @@ management:
     health:
         circuitbreakers:
             enabled: true
-        ratelimiters:
-            enabled: true
 resilience4j:
     circuitbreaker:
-        configs:
-            default:
-                automaticTransitionFromOpenToHalfOpenEnabled: true
-                eventConsumerBufferSize: 10
-                failureRateThreshold: 50
-                minimumNumberOfCalls: 5
-                permittedNumberOfCallsInHalfOpenState: 3
-                registerHealthIndicator: true
-                slidingWindowSize: 10
-                waitDurationInOpenState: 5s
         instances:
             peopleEndpointCircuitBreaker:
-                baseConfig: default
+                failureRateThreshold: 50
+                slowCallRateThreshold: 50
+                slowCallDurationThreshold: 2s
+                waitDurationInOpenState: 5s
+                automaticTransitionFromOpenToHalfOpenEnabled: true
+                permittedNumberOfCallsInHalfOpenState: 3
+                minimumNumberOfCalls: 5
+                slidingWindowSize: 10
                 registerHealthIndicator: true
+            recordExceptions:
+                - org.springframework.web.client.HttpServerErrorException
+                - java.util.concurrent.TimeoutException
+                - java.io.IOException
 spring:
     application:
         name: spring.boot.resilience4j
