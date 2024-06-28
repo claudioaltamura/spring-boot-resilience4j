@@ -1,6 +1,7 @@
 package de.claudioaltamura.spring.boot.resilience4j;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
@@ -19,13 +20,17 @@ public class SwapiConnector {
         this.restClient = restClient;
     }
 
-    @CircuitBreaker(name = "peopleEndpointCircuitBreaker")
+    @CircuitBreaker(name = "peopleEndpointCircuitBreaker") //, fallbackMethod = "getPeopleFallback")
     public JsonNode getPeople(int id) {
         return restClient.get()
                 .uri("/api/people/{id}/?format=json", id)
                 .accept(MediaType.APPLICATION_JSON)
                 .retrieve()
                 .body(JsonNode.class);
+    }
+
+    public JsonNode getPeopleFallback(Exception e) {
+        return JsonNodeFactory.instance.objectNode();
     }
 
     public JsonNode getPeopleWithDelay(int id) {
